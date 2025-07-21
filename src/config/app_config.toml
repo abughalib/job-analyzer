@@ -1,17 +1,31 @@
-[database]
-engine = "POSTGRESQL"
+[database_config]
+database_engine = "POSTGRESQL"
+hosted = "LOCALLY_HOSTED"
 
-[database.postgresql]
+[database_config.database_config]
 database = "search_db"
 hostname = "localhost"
 port = 5432
 
-[database.chromadb]
-collection_name = "search_db"
-hostname = "localhost"
-port = 8000
-
-[app_settings]
-app_name = "Job Analyzer"
+[app_setting]
+app_name = "Test App"
 app_author = "Abugh"
-app_log_level = "LogLevel.INFO"
+app_log_level = "DEBUG"
+
+[inference]
+hosted = "OPENAI_HOSTED"
+inference_engine = "OPENAI"
+
+[inference.inference_config]
+api_base = "https://api.openai.com/v1"
+model = "gpt-3.5-turbo"
+temperature = 0.7
+max_tokens = 1000
+
+[embed]
+hosted = "OPENAI_HOSTED"
+inference_engine = "OPENAI"
+
+[embed.inference_config]
+api_base = "https://api.openai.com/v1"
+model = "text-embedding-3"
