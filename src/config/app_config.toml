@@ -1,0 +1,17 @@
+[database]
+engine = "POSTGRESQL"
+
+[database.postgresql]
+database = "search_db"
+hostname = "localhost"
+port = 5432
+
+[database.chromadb]
+collection_name = "search_db"
+hostname = "localhost"
+port = 8000
+
+[app_settings]
+app_name = "Job Analyzer"
+app_author = "Abugh"
+app_log_level = "LogLevel.INFO"

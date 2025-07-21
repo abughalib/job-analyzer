@@ -1,0 +1,21 @@
+[project]
+name = "job-analyzer"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "Abu Ghalib",email = "abughalib64@gmail.com"}
+]
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "fastapi[standard] (>=0.116.1,<0.117.0)",
+    "tomli-w (>=1.2.0,<2.0.0)"
+]
+
+[tool.poetry]
+packages = [{include = "job_analyzer", from = "src"}]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
