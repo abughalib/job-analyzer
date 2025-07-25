@@ -45,7 +45,7 @@ class OpenAIInferenceConfig(BaseModel):
     api_base: str = "https://api.openai.com/v1"
     model: str = "gpt-3.5-turbo"
     temperature: float = 0.7
-    max_tokens: int = 1000
+    max_tokens: int = 4096
 
 
 class AzureOpenAIInferenceConfig(BaseModel):
@@ -53,7 +53,7 @@ class AzureOpenAIInferenceConfig(BaseModel):
     api_version: str = "2023-05-15"
     model: str = "gpt-35-turbo"
     temperature: float = 0.7
-    max_tokens: int = 1000
+    max_tokens: int = 4096
     deployment_name: str = "gpt-35-turbo"
 
 
@@ -61,14 +61,15 @@ class GeminiInferenceConfig(BaseModel):
     api_base: str = "https://api.gemini.com/v1"
     model: str = "gemini-1"
     temperature: float = 0.7
-    max_tokens: int = 1000
+    max_tokens: int = 4096
 
 
 class LocalInferenceConfig(BaseModel):
-    model_path: str = "models/model.gguf"
-    tokenizer_path: str = "models/tokenizer.json"
+    api_base: str = "http://localhost:1234/v1/chat/completions"
+    model: str = "models/model.gguf"
+    tokenizer: str = "models/tokenizer.json"
     temperature: float = 0.7
-    max_tokens: int = 1000
+    max_tokens: int = 4096
     use_gpu: bool = True
 
 
@@ -87,7 +88,7 @@ class Inference(BaseModel):
         return Inference()
 
 
-class AzureEmbedConfig(BaseModel):
+class AzureEmbeddingConfig(BaseModel):
     api_base: str = "https://api.openai.azure.com/"
     api_version: str = "2023-05-15"
     model: str = "text-embedding-3"
@@ -95,35 +96,38 @@ class AzureEmbedConfig(BaseModel):
     dimension: int | None = None
 
 
-class OpenAIEmbedConfig(BaseModel):
+class OpenAIEmbeddingConfig(BaseModel):
     api_base: str = "https://api.openai.com/v1"
     model: str = "text-embedding-3"
     dimension: int | None = None
 
 
-class GeminiEmbedConfig(BaseModel):
+class GeminiEmbeddingConfig(BaseModel):
     api_base: str = "https://api.gemini.com/v1"
     model: str = "gemini-embed-1"
     dimension: int | None = None
 
 
-class LocalEmbedConfig(BaseModel):
-    model_path: str = "models/embed_model.gguf"
-    tokenizer_path: str = "models/embed_tokenizer.json"
+class LocalEmbeddingConfig(BaseModel):
+    model: str = "models/embed_model.gguf"
+    tokenizer: str = "models/embed_tokenizer.json"
     dimension: int | None = None
     use_gpu: bool = True
 
 
-class Embed(BaseModel):
+class Embedding(BaseModel):
     hosted: ModelHosted = ModelHosted.OPENAI_HOSTED
-    inference_engine: InferenceEngine = InferenceEngine.OPENAI
-    inference_config: Union[
-        AzureEmbedConfig, OpenAIEmbedConfig, LocalEmbedConfig, GeminiEmbedConfig
-    ] = Field(default_factory=OpenAIEmbedConfig)
+    embedding_engine: InferenceEngine = InferenceEngine.OPENAI
+    embedding_config: Union[
+        AzureEmbeddingConfig,
+        OpenAIEmbeddingConfig,
+        LocalEmbeddingConfig,
+        GeminiEmbeddingConfig,
+    ] = Field(default_factory=OpenAIEmbeddingConfig)
 
     @staticmethod
-    def default() -> "Embed":
-        return Embed()
+    def default() -> "Embedding":
+        return Embedding()
 
 
 class PostgreSQLConfig(BaseModel):
@@ -173,7 +177,7 @@ class AppConfig(BaseModel):
     database_config: DatabaseConfig = Field(default_factory=DatabaseConfig.default)
     app_setting: AppSetting = Field(default_factory=AppSetting.default)
     inference: Inference = Field(default_factory=Inference.default)
-    embed: Embed = Field(default_factory=Embed.default)
+    embed: Embedding = Field(default_factory=Embedding.default)
 
     def save_config(self, toml_file_path: Path = app_config_path()):
         """Saves the configuration to a TOML file."""
@@ -200,6 +204,11 @@ class AppConfig(BaseModel):
 
         print(f"Configuration loaded from {path}")
         return cls(**config_data)
+
+    @classmethod
+    def load_default(cls) -> "AppConfig":
+        """Loads the default configuration."""
+        return cls.from_config(app_config_path())
 
     @staticmethod
     def default() -> "AppConfig":
