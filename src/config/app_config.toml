@@ -14,11 +14,11 @@ app_log_level = "DEBUG"
 
 [inference]
 hosted = "OPENAI_HOSTED"
-inference_engine = "OPENAI"
+inference_engine = "LOCAL"
 
 [inference.inference_config]
 api_base = "http://localhost:1234/v1/"
-model = "qwen/qwen3-1.7b"
+model = "microsoft/phi-4-mini-reasoning"
 temperature = 0.7
 max_tokens = 4096
 

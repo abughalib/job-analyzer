@@ -1,0 +1,8 @@
+from enum import Enum
+
+
+class APISTATUS(Enum):
+    PERMISSIONERROR = "PERMISSION_ERROR"
+    NOT_CREATED = "NOT_CREATED"
+    DUPLICATE = "DUPLICATE"
+    OK = "OK"

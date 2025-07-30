@@ -83,3 +83,7 @@ Desktop.ini
 # dotenv
 .env
 .env.*
+
+# App specific changes
+.continue
+uploaded_files

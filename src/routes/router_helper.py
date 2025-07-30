@@ -1,8 +1,23 @@
-from fastapi import WebSocket
+from pathlib import Path
 
-from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
-
-from llm.local.inference import LocalInference
+import xxhash
+from fastapi import WebSocket, UploadFile
+from langchain_core.messages import (
+    BaseMessage,
+    HumanMessage,
+    SystemMessage,
+)
+from routes.models import APISTATUS
+from utils.vars import get_app_path
+from llm.inference import Inference
+from llm.tools.layoff_tools import (
+    get_recent_layoff_tool,
+    get_recent_layoff_tool_fields,
+)
+from job_analyzer.database.models import LayOff
+from job_analyzer.database.layoff_db import add_layoff_bulk
+from llm.tools.tool_helper import functional_call_handler as tool_handler
+from utils.constants import UPLOADED_FILE_FOLDER
 
 
 class ConnectionManager:
@@ -35,6 +50,40 @@ class ConnectionManager:
 
         self.chat_history[websocket].append(HumanMessage(content=message))
 
-        local_inference = LocalInference()
+        inference = (
+            Inference()
+            .with_tools([get_recent_layoff_tool, get_recent_layoff_tool_fields])
+            .with_tool_handler(tool_handler)
+        )
 
-        await local_inference.stream(websocket, self.chat_history[websocket])
+        await inference.stream(websocket, self.chat_history[websocket])
+
+
+async def handle_layoff_file_upload(file: UploadFile) -> APISTATUS:
+    contents = await file.read()
+
+    file_hash = xxhash.xxh64(contents).hexdigest()
+
+    file_extension = Path(file.filename or "abc.csv").suffix
+
+    upload_path = (
+        get_app_path()
+        .joinpath(UPLOADED_FILE_FOLDER)
+        .joinpath(f"temp_{file_hash}.{file_extension}")
+    )
+
+    if upload_path.exists():
+        return APISTATUS.DUPLICATE
+
+    try:
+        with open(upload_path, "wb") as f:
+            f.write(contents)
+
+    except PermissionError:
+        return APISTATUS.PERMISSIONERROR
+
+    layoff_parsed = LayOff.from_csv(upload_path)
+
+    await add_layoff_bulk(layoff_parsed)
+
+    return APISTATUS.OK
