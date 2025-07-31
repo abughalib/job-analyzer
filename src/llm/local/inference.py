@@ -66,14 +66,23 @@ class LocalInference(BaseInference):
             return response_str
 
         tool_calls_args = {}  # (tool_name, tool_id) -> args
+        last_tool_name = ""
+        last_tool_id = ""
 
         async for chunk in self.llm_with_tools.astream(messages):  # type: ignore
             if isinstance(chunk, AIMessageChunk):
                 if chunk.tool_calls:
                     for tool_call in chunk.tool_calls:
-                        tool_calls_args[(tool_call["name"], tool_call["id"])] = (
-                            tool_call["args"]
-                        )
+                        if tool_call["name"] and tool_call["id"]:
+                            tool_calls_args[(tool_call["name"], tool_call["id"])] = ""
+                            last_tool_name = tool_call["name"]
+                            last_tool_id = tool_call["id"]
+
+                if "tool_calls" in chunk.additional_kwargs:
+                    for tool_call in chunk.additional_kwargs["tool_calls"]:
+                        tool_calls_args[(last_tool_name, last_tool_id)] += tool_call[
+                            "function"
+                        ]["arguments"]
 
                 if isinstance(chunk.content, str) and chunk.content:
                     response_str += chunk.content

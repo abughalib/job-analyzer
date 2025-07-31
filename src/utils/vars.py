@@ -6,7 +6,7 @@ AZURE_OPENAI_KEY = "AZURE_OPENAI_KEY"
 GITHUB_API_KEY = "GITHUB_API_KEY"
 TOML_CONFIG_PATH = "TOML_CONFIG_PATH"
 LAYOFF_DB_URL = "LAYOFF_DB_URL"
-
+NEWS_API_KEY = "NEWS_API_KEY"
 
 def app_config_path() -> pathlib.Path:
     """Get App Configuration TOML file Path"""
@@ -62,3 +62,14 @@ def get_layoff_db() -> str:
         return layoff_db_url
 
     raise EnvironmentError("LAYOFF_DB_URL not found")
+
+
+def get_news_api_key() -> str:
+    """Get News API Key"""
+
+    news_api_key = os.environ.get(NEWS_API_KEY)
+
+    if news_api_key:
+        return news_api_key
+
+    raise EnvironmentError("NEWS_API_KEY not found")

@@ -14,10 +14,10 @@ async def get_recent_layoff_tool_fields(field_name: str) -> list[str]:
     return await get_field_unique_values(field_name)
 
 
-@tool(description="Get recent layoffs in Tech industry.")
+@tool(description="Fetch recent tech industry layoffs with filters like company, location, date, and industry type.")
 async def get_recent_layoff_tool(
     company_name: Optional[str] = None,
-    days_to_look_back: Optional[int] = 5,
+    days_to_look_back: Optional[int] = None,
     hq_location: Optional[str] = None,
     tech_industry_type: Optional[str] = None,
     layoff_date: Optional[str] = None,
@@ -36,7 +36,7 @@ async def get_recent_layoff_tool(
         country (Optional[str]): Country where the layoffs occurred.
         offset (int): Offset for pagination, limit is 20.
     Returns:
-        str: A markdown representation of the recent layoffs.
+        str: Json with recent layoffs.
     """
     recent_lay_off = await get_recent_layoff(
         company_name=company_name,
@@ -73,11 +73,32 @@ async def layoff_call_handler(
                     status="error",
                 )
         case "get_recent_layoff_tool":
-            josn_args = json.loads(str(function_args))
-            recent_lay_off = await get_recent_layoff()
+            json_args = json.loads(function_args)
+            company_name: str | None = json_args.get("company_name", None)
+            days: int | None = json_args.get("days_to_look_back", None)
+            hq_location: str | None = json_args.get("hq_location", None)
+            industry: str | None = json_args.get("tech_industry_type", None)
+            date: str | None = json_args.get("layoff_date", None)
+            stage: str | None = json_args.get("layoff_stage", None)
+            country: str | None = json_args.get("country", None)
+            offset: int = json_args.get("offset", 0)
+            recent_lay_off = await get_recent_layoff(
+                company_name=company_name,
+                days=days,
+                hq_location=hq_location,
+                industry=industry,
+                date=date,
+                stage=stage,
+                country=country,
+                offset=offset,
+            )
             return ToolMessage(
                 tool_call_id=function_id,
                 content=LayOff.as_context(recent_lay_off),
                 status="success",
             )
-    raise NotImplementedError("Method not implemented")
+    return ToolMessage(
+        tool_call_id=function_id,
+        content=f"No tool with name: {function_name}",
+        status="error",
+    )

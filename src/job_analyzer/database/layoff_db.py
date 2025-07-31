@@ -22,13 +22,13 @@ layoff_db_session = async_sessionmaker(layoff_db_engine, expire_on_commit=False)
 
 async def get_recent_layoff(
     company_name: Optional[str] = None,
-    days: Optional[int] = 10,
+    days: Optional[int] = None,
     hq_location: Optional[str] = None,
     industry: Optional[str] = None,
     date: Optional[str] = None,
     stage: Optional[str] = None,
     country: Optional[str] = None,
-    limit: int = 20,
+    limit: int = 5,
     offset: int = 0,
     session: Optional[AsyncSession] = None,
 ) -> list[LayOff]:
@@ -58,8 +58,8 @@ async def get_recent_layoff(
     if date:
         filters.append(LayOff.date == date)
     elif days is not None:
-        since_date = datetime.now() - timedelta(days=days)
-        filters.append(LayOff.date >= since_date.date())
+        since_date = datetime.now().date() - timedelta(days=days)
+        filters.append(LayOff.date >= since_date)
 
     stmt = select(LayOff)
     if filters:

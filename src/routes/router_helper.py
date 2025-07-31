@@ -14,10 +14,14 @@ from llm.tools.layoff_tools import (
     get_recent_layoff_tool,
     get_recent_layoff_tool_fields,
 )
+from llm.tools.news_tools import (
+    search_recent_news_tool,
+)
 from job_analyzer.database.models import LayOff
 from job_analyzer.database.layoff_db import add_layoff_bulk
 from llm.tools.tool_helper import functional_call_handler as tool_handler
 from utils.constants import UPLOADED_FILE_FOLDER
+from utils.llm_config import get_system_prompt
 
 
 class ConnectionManager:
@@ -48,11 +52,18 @@ class ConnectionManager:
     async def handle_chat_completion(self, websocket: WebSocket, message: str):
         """Handle chat completion logic"""
 
+        self.chat_history[websocket][0] = SystemMessage(content=get_system_prompt())
         self.chat_history[websocket].append(HumanMessage(content=message))
 
         inference = (
             Inference()
-            .with_tools([get_recent_layoff_tool, get_recent_layoff_tool_fields])
+            .with_tools(
+                [
+                    get_recent_layoff_tool,
+                    get_recent_layoff_tool_fields,
+                    search_recent_news_tool,
+                ]
+            )
             .with_tool_handler(tool_handler)
         )
 

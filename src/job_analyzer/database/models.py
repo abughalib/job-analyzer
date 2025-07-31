@@ -1,5 +1,6 @@
 import re
 import csv
+import json
 import hashlib
 from enum import Enum
 from typing import cast
@@ -57,19 +58,8 @@ class LayOff(Base):
     @staticmethod
     def as_context(layoffs: list["LayOff"]) -> str:
 
-        headers = [
-            "Company",
-            "Location HQ",
-            "# Laid Off",
-            "Date",
-            "%",
-            "Industry",
-            "Source",
-            "Stage",
-            "$ Raised (mm)",
-            "Country",
-            "Date Added",
-        ]
+        if not layoffs:
+            return "No Recent Layoff"
 
         rows = [
             [
@@ -88,7 +78,7 @@ class LayOff(Base):
             for layoff in layoffs
         ]
 
-        return f"```markdown\n### Layoffs\n{tabulate(rows, headers=headers, tablefmt='pipe')}\n```"
+        return json.dumps(rows)
 
     @staticmethod
     def from_csv(csv_file_path: Path) -> list["LayOff"]:
@@ -96,7 +86,7 @@ class LayOff(Base):
 
         layoff_data: list[LayOff] = []
 
-        with open(csv_file_path, mode="r", encoding='utf-8-sig') as csv_file:
+        with open(csv_file_path, mode="r", encoding="utf-8-sig") as csv_file:
             csv_reader = csv.DictReader(csv_file)
 
             for row in csv_reader:
