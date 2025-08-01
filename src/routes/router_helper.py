@@ -17,6 +17,12 @@ from llm.tools.layoff_tools import (
 from llm.tools.news_tools import (
     search_recent_news_tool,
 )
+from llm.tools.langsearch_tools import (
+    search_recent_web_content,
+)
+from llm.tools.google_search_tools import (
+    google_search,
+)
 from job_analyzer.database.models import LayOff
 from job_analyzer.database.layoff_db import add_layoff_bulk
 from llm.tools.tool_helper import functional_call_handler as tool_handler
@@ -62,6 +68,8 @@ class ConnectionManager:
                     get_recent_layoff_tool,
                     get_recent_layoff_tool_fields,
                     search_recent_news_tool,
+                    search_recent_web_content,
+                    google_search,
                 ]
             )
             .with_tool_handler(tool_handler)

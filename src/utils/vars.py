@@ -7,6 +7,9 @@ GITHUB_API_KEY = "GITHUB_API_KEY"
 TOML_CONFIG_PATH = "TOML_CONFIG_PATH"
 LAYOFF_DB_URL = "LAYOFF_DB_URL"
 NEWS_API_KEY = "NEWS_API_KEY"
+GOOGLE_SEARCH_API_KEY = "GOOGLE_SEARCH_API_KEY"
+LANGSEARCH_API_KEY = "LANGSEARCH_API_KEY"
+
 
 def app_config_path() -> pathlib.Path:
     """Get App Configuration TOML file Path"""
@@ -51,6 +54,28 @@ def get_github_api_key() -> str:
         return github_api_key
 
     raise EnvironmentError("GitHub API Key not Found")
+
+
+def get_google_search_api_key() -> str:
+    """Get Google Search API Key"""
+
+    google_api_key = os.environ.get(GOOGLE_SEARCH_API_KEY)
+
+    if google_api_key:
+        return google_api_key
+
+    raise EnvironmentError("GOOGLE_SEARCH_API_KEY not found")
+
+
+def get_langsearch_api_key() -> str:
+    """Get LangSearch API Key"""
+
+    langsearch_api_key = os.environ.get(LANGSEARCH_API_KEY)
+
+    if langsearch_api_key:
+        return langsearch_api_key
+
+    raise EnvironmentError("LANGSEARCH_API_KEY not found")
 
 
 def get_layoff_db() -> str:
