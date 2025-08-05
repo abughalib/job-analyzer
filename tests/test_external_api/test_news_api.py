@@ -68,7 +68,3 @@ class TestNewsAPI(unittest.IsolatedAsyncioTestCase):
         self.assertIsNotNone(self.news_response_model.status)
         self.assertIsNotNone(self.news_response_model.totalResults)
         self.assertIsNotNone(self.news_response_model.articles)
-
-    async def test_fetch_new_dummy(self):
-        """Test fetch news API"""
-        pass

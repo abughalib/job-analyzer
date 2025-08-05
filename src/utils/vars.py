@@ -9,6 +9,7 @@ LAYOFF_DB_URL = "LAYOFF_DB_URL"
 NEWS_API_KEY = "NEWS_API_KEY"
 GOOGLE_SEARCH_API_KEY = "GOOGLE_SEARCH_API_KEY"
 LANGSEARCH_API_KEY = "LANGSEARCH_API_KEY"
+RAPID_API_KEY = "RAPID_API_KEY"
 
 
 def app_config_path() -> pathlib.Path:
@@ -76,6 +77,17 @@ def get_langsearch_api_key() -> str:
         return langsearch_api_key
 
     raise EnvironmentError("LANGSEARCH_API_KEY not found")
+
+
+def get_rapid_api_key() -> str:
+    """Get Rapid API Key"""
+
+    rapid_api_key = os.environ.get(RAPID_API_KEY)
+
+    if rapid_api_key:
+        return rapid_api_key
+
+    raise EnvironmentError("RAPID_API_KEY not found")
 
 
 def get_layoff_db() -> str:

@@ -59,8 +59,29 @@ Today is **{date}.**
 
 """
 
+# Used in job-analyzer/external_api/glassdoor
+GLASSDOOR_YEARS_OF_EXPERINCE = [
+    "LESS_THAN_ONE",  # 0-1 year
+    "ONE_TO_THREE",  # 1-3 years
+    "FOUR_TO_SIX",  # 4-6 years
+    "SEVEN_TO_NINE",  # 7-9 years
+    "TEN_TO_FOURTEEN",  # 10-14 years
+    "ABOVE_FIFTEEN",  # 15+ years
+]
+
+# Used in job-anlyzer/external_api/glassdoor
+GLASSDOOR_SORT_OPTIONS = [
+    "POPULAR",  # Most Popular
+    "UGC_SALARY_COUNT_DESC",  # Most Reports
+    "TOTAL_PAY_DESC",  # Salary: High to Low
+    "TOTAL_PAY_ASC",  # Salary: Low to High
+]
+
 # Used in llm/tools/new_tools.py
 NEWS_API_URL = "https://newsapi.org/v2/everything"
 LANGSEARCH_URL = "https://api.langsearch.com/v1/web-search"
 GOOGLE_SEARCH_URL = "https://www.googleapis.com/customsearch/v1"
 GOOGLE_SERACH_CX = "c1f537542c3dd499a"
+GLASSDOOR_API_URL = "https://glassdoor-real-time.p.rapidapi.com/salaries/search"
+GLASSDOOR_LOCATION_API_URL = "https://glassdoor-real-time.p.rapidapi.com/jobs/location"
+GLASSDOOR_HOST = "glassdoor-real-time.p.rapidapi.com"
