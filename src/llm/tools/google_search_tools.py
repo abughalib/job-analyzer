@@ -9,7 +9,7 @@ from job_analyzer.external_api.google_search import get_google_search_result
 @tool(
     description="Performs a Google web search and returns summarized results including headlines and article summaries based on a search keyword and result limit."
 )
-async def google_search(keyword: str, limit: int = 5) -> str:
+async def google_search_tool(keyword: str, limit: int = 5) -> str:
     """
     Perform a web search and retrieve summarized recent content based on a keyword.
 

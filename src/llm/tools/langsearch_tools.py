@@ -9,7 +9,7 @@ from job_analyzer.external_api.langsearch import get_langsearch
 @tool(
     description="Performs a general web search and returns summarized results including headlines and article summaries based on a search keyword and result limit."
 )
-async def search_recent_web_content(keyword: str, limit: int = 5):
+async def search_recent_web_content_tool(keyword: str, limit: int = 5):
     """
     Perform a web search and retrieve summarized recent content based on a keyword.
 
