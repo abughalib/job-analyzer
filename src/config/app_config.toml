@@ -2,10 +2,21 @@
 database_engine = "POSTGRESQL"
 hosted = "LOCALLY_HOSTED"
 
-[database_config.database_config]
+[database_config.postgresql_config]
 database = "search_db"
 hostname = "localhost"
 port = 5432
+
+[database_config.chroma_config]
+collection_name = "search_db"
+hostname = "localhost"
+port = 8000
+
+[database_config.weaviate_config]
+url = "http://localhost:8080"
+database_name = "search_db"
+class_name = "Document"
+vector_index_name = "DocumentVectorIndex"
 
 [app_setting]
 app_name = "Test App"
@@ -14,18 +25,59 @@ app_log_level = "DEBUG"
 
 [inference]
 hosted = "OPENAI_HOSTED"
-inference_engine = "LOCAL"
+inference_engine = "GEMINI"
 
-[inference.inference_config]
-api_base = "http://localhost:1234/v1/"
-model = "google/gemma-3-12b"
+[inference.inference_config.openai]
+api_base = "https://api.openai.com/v1"
+model = "gpt-3.5-turbo"
 temperature = 0.7
 max_tokens = 4096
+context_window = 4096
+
+[inference.inference_config.azure_openai]
+api_base = "https://api.openai.azure.com/"
+api_version = "2023-05-15"
+model = "gpt-35-turbo"
+temperature = 0.7
+max_tokens = 4096
+deployment_name = "gpt-35-turbo"
+context_window = 4096
+
+[inference.inference_config.local]
+api_base = "http://127.0.0.1:1234/v1/"
+model = "microsoft/phi-4-mini-reasoning"
+tokenizer = "microsoft/phi-4-mini-reasoning"
+temperature = 0.6
+max_tokens = 4096
+context_window = 4096
+use_gpu = true
+
+[inference.inference_config.gemini]
+api_base = "https://api.gemini.com/v1"
+model = "gemini-2.0-flash-lite"
+temperature = 0.6
+max_tokens = 4096
+context_window = 131072
 
 [embed]
 hosted = "OPENAI_HOSTED"
 embedding_engine = "OPENAI"
 
-[embed.embedding_config]
+[embed.embedding_config.azure_embedding_config]
+api_base = "https://api.openai.azure.com/"
+api_version = "2023-05-15"
+model = "text-embedding-3"
+deployment_name = "text-embedding-3"
+
+[embed.embedding_config.openai_embedding_config]
 api_base = "https://api.openai.com/v1"
 model = "text-embedding-3"
+
+[embed.embedding_config.local_embedding_config]
+model = "models/embed_model.gguf"
+tokenizer = "models/embed_tokenizer.json"
+use_gpu = true
+
+[embed.embedding_config.gemini_embedding_config]
+api_base = "https://api.gemini.com/v1"
+model = "gemini-embed-1"

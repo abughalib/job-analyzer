@@ -3,14 +3,16 @@ from typing import Union, Callable, Optional, Coroutine, Any
 from langchain_core.tools import BaseTool
 from langchain_core.messages import ToolMessage
 
+from llm.base.inference import BaseInference
 from llm.local.inference import LocalInference
+from llm.gemini.inference import GeminiInference
 from utils.app_config import AppConfig, InferenceEngine
 
 
 class Inference:
     def __init__(self, app_config: AppConfig = AppConfig.load_default()):
         self.app_config = app_config
-        self.llm: Union[LocalInference, None] = None
+        self.llm: Union[BaseInference, None] = None
         self.function_call_handler: Optional[
             Callable[[str, str, str], Coroutine[Any, Any, ToolMessage]]
         ] = None
@@ -18,6 +20,8 @@ class Inference:
         match self.app_config.inference.inference_engine:
             case InferenceEngine.LOCAL:
                 self.llm = LocalInference()
+            case InferenceEngine.GEMINI:
+                self.llm = GeminiInference()
             case _:
                 raise ValueError("Unknown inference engine")
 
@@ -56,6 +60,6 @@ class Inference:
         else:
             raise ValueError("LLM instance is not initialized")
 
-    def get_llm(self) -> Union[LocalInference, None]:
+    def get_llm(self) -> Union[BaseInference, None]:
         """Get the LLM instance."""
         return self.llm

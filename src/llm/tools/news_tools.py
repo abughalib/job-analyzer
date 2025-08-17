@@ -40,7 +40,7 @@ async def news_call_handler(
 
     match function_name:
         case "search_recent_news_tool":
-            json_args = json.loads(str(function_args))
+            json_args = json.loads(function_args) if function_args else json.loads("{}")
             keyword = json_args["keyword"]
             from_date = json_args.get(
                 "from_date", time.localtime(time.time() - 7 * 24 * 60 * 60)

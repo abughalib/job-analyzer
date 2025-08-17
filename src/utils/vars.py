@@ -10,6 +10,7 @@ NEWS_API_KEY = "NEWS_API_KEY"
 GOOGLE_SEARCH_API_KEY = "GOOGLE_SEARCH_API_KEY"
 LANGSEARCH_API_KEY = "LANGSEARCH_API_KEY"
 RAPID_API_KEY = "RAPID_API_KEY"
+GEMINI_API_KEY = "GEMINI_API_KEY"
 
 
 def app_config_path() -> pathlib.Path:
@@ -88,6 +89,17 @@ def get_rapid_api_key() -> str:
         return rapid_api_key
 
     raise EnvironmentError("RAPID_API_KEY not found")
+
+
+def get_gemini_api_key() -> str:
+    """Get Gemini API Key"""
+
+    gemini_api_key = os.environ.get(GEMINI_API_KEY)
+
+    if gemini_api_key:
+        return gemini_api_key
+
+    raise EnvironmentError("GEMINI_API_KEY not found")
 
 
 def get_layoff_db() -> str:

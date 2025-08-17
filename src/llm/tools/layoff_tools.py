@@ -14,7 +14,9 @@ async def get_recent_layoff_tool_fields(field_name: str) -> list[str]:
     return await get_field_unique_values(field_name)
 
 
-@tool(description="Fetch recent tech industry layoffs with filters like company, location, date, and industry type.")
+@tool(
+    description="Fetch recent tech industry layoffs with filters like company, location, date, and industry type."
+)
 async def get_recent_layoff_tool(
     company_name: Optional[str] = None,
     days_to_look_back: Optional[int] = None,
@@ -58,7 +60,7 @@ async def layoff_call_handler(
 
     match function_name:
         case "get_recent_layoff_tool_fields":
-            json_args = json.loads(function_args)
+            json_args = json.loads(function_args) if function_args else {}
             if json_args:
                 field_name = json_args["field_name"]
                 return ToolMessage(
@@ -73,7 +75,7 @@ async def layoff_call_handler(
                     status="error",
                 )
         case "get_recent_layoff_tool":
-            json_args = json.loads(function_args)
+            json_args = json.loads(function_args) if function_args else {}
             company_name: str | None = json_args.get("company_name", None)
             days: int | None = json_args.get("days_to_look_back", None)
             hq_location: str | None = json_args.get("hq_location", None)

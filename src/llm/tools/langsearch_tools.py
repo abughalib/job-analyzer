@@ -35,7 +35,7 @@ async def langsearch_call_handler(
 
     match function_name:
         case "search_recent_web_content":
-            json_args = json.loads(str(function_args))
+            json_args = json.loads(function_args) if function_args else json.loads("{}")
             keyword = json_args["keyword"]
             limit = json_args.get("limit", 5)
             

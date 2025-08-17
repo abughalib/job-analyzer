@@ -1,11 +1,9 @@
-from typing import Callable, Optional, Coroutine, Any
-from collections import defaultdict
-
+from typing import Callable, Coroutine, Any
 from fastapi import WebSocket
 
 from pydantic.types import SecretStr
-from langchain_openai import ChatOpenAI
 from langchain_core.tools import BaseTool
+from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.messages import (
     BaseMessage,
     AIMessageChunk,
@@ -15,31 +13,32 @@ from langchain_core.messages import (
 
 from llm.base.inference import BaseInference
 from llm.base.callbacks import CallBackHandler
+from utils.vars import get_gemini_api_key
 from utils.app_config import AppConfig
 
 
-class LocalInference(BaseInference):
-    """Local inference using a language model."""
+class GeminiInference(BaseInference):
+    """Gemini Inference Engine."""
 
     def __init__(
         self,
         app_config: AppConfig = AppConfig.load_default(),
     ):
         self.app_config = app_config
-        self.llm = ChatOpenAI(
-            base_url=self.app_config.inference.inference_config.openai.api_base,
-            model=self.app_config.inference.inference_config.openai.model,
-            temperature=self.app_config.inference.inference_config.openai.temperature,
-            api_key=SecretStr("no-key"),  # Local inference does not require an API key
+        self.llm = ChatGoogleGenerativeAI(
+            model=self.app_config.inference.inference_config.gemini.model,
+            google_api_key=get_gemini_api_key(),
+            temperature=self.app_config.inference.inference_config.gemini.temperature,
+            max_output_tokens=self.app_config.inference.inference_config.gemini.max_tokens,
         )
         self.function_call_handler = None
         self.llm_with_tools = None
 
-    def tools(self, tools: list[BaseTool]) -> "LocalInference":
+    def tools(self, tools: list[BaseTool]) -> "GeminiInference":
         """Set tools for the language model."""
 
         assert isinstance(
-            self.llm, ChatOpenAI
+            self.llm, ChatGoogleGenerativeAI
         ), "LLM must be an instance of ChatOpenAI to bind tools."
 
         self.llm_with_tools = self.llm.bind_tools(tools)
@@ -49,7 +48,7 @@ class LocalInference(BaseInference):
     def tools_handler(
         self,
         tool_handler: Callable[[str, str, str], Coroutine[Any, Any, ToolMessage]],
-    ) -> "LocalInference":
+    ) -> "GeminiInference":
         """Set Function Call handler for tools"""
 
         self.function_call_handler = tool_handler

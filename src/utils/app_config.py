@@ -3,7 +3,6 @@ import tomli_w
 from enum import Enum
 from pydantic import BaseModel, Field
 from pathlib import Path
-from typing import Union
 
 from utils.vars import app_config_path
 
@@ -46,6 +45,7 @@ class OpenAIInferenceConfig(BaseModel):
     model: str = "gpt-3.5-turbo"
     temperature: float = 0.7
     max_tokens: int = 4096
+    context_window: int = 4096
 
 
 class AzureOpenAIInferenceConfig(BaseModel):
@@ -55,13 +55,15 @@ class AzureOpenAIInferenceConfig(BaseModel):
     temperature: float = 0.7
     max_tokens: int = 4096
     deployment_name: str = "gpt-35-turbo"
+    context_window: int = 4096
 
 
 class GeminiInferenceConfig(BaseModel):
     api_base: str = "https://api.gemini.com/v1"
-    model: str = "gemini-1"
-    temperature: float = 0.7
+    model: str = "gemma-3-27b-it"
+    temperature: float = 0.6
     max_tokens: int = 4096
+    context_window: int = 131072
 
 
 class LocalInferenceConfig(BaseModel):
@@ -70,18 +72,21 @@ class LocalInferenceConfig(BaseModel):
     tokenizer: str = "models/tokenizer.json"
     temperature: float = 0.7
     max_tokens: int = 4096
+    context_window: int = 4096
     use_gpu: bool = True
+
+
+class InferenceConfig(BaseModel):
+    openai: OpenAIInferenceConfig = OpenAIInferenceConfig()
+    azure_openai: AzureOpenAIInferenceConfig = AzureOpenAIInferenceConfig()
+    local: LocalInferenceConfig = LocalInferenceConfig()
+    gemini: GeminiInferenceConfig = GeminiInferenceConfig()
 
 
 class Inference(BaseModel):
     hosted: ModelHosted = ModelHosted.OPENAI_HOSTED
     inference_engine: InferenceEngine = InferenceEngine.OPENAI
-    inference_config: Union[
-        AzureOpenAIInferenceConfig,
-        OpenAIInferenceConfig,
-        LocalInferenceConfig,
-        GeminiInferenceConfig,
-    ] = Field(default_factory=OpenAIInferenceConfig)
+    inference_config: InferenceConfig = Field(default_factory=InferenceConfig)
 
     @staticmethod
     def default() -> "Inference":
@@ -115,15 +120,25 @@ class LocalEmbeddingConfig(BaseModel):
     use_gpu: bool = True
 
 
+class EmbeddingConfig(BaseModel):
+    azure_embedding_config: AzureEmbeddingConfig = Field(
+        default_factory=AzureEmbeddingConfig
+    )
+    openai_embedding_config: OpenAIEmbeddingConfig = Field(
+        default_factory=OpenAIEmbeddingConfig
+    )
+    local_embedding_config: LocalEmbeddingConfig = Field(
+        default_factory=LocalEmbeddingConfig
+    )
+    gemini_embedding_config: GeminiEmbeddingConfig = Field(
+        default_factory=GeminiEmbeddingConfig
+    )
+
+
 class Embedding(BaseModel):
     hosted: ModelHosted = ModelHosted.OPENAI_HOSTED
     embedding_engine: InferenceEngine = InferenceEngine.OPENAI
-    embedding_config: Union[
-        AzureEmbeddingConfig,
-        OpenAIEmbeddingConfig,
-        LocalEmbeddingConfig,
-        GeminiEmbeddingConfig,
-    ] = Field(default_factory=OpenAIEmbeddingConfig)
+    embedding_config: EmbeddingConfig = Field(default_factory=EmbeddingConfig)
 
     @staticmethod
     def default() -> "Embedding":
@@ -151,9 +166,9 @@ class WeaviateConfig(BaseModel):
 
 class DatabaseConfig(BaseModel):
     database_engine: DatabaseEngine = DatabaseEngine.POSTGRESQL
-    database_config: Union[PostgreSQLConfig, ChromaConfig, WeaviateConfig] = Field(
-        default_factory=PostgreSQLConfig
-    )
+    postgresql_config: PostgreSQLConfig = Field(default_factory=PostgreSQLConfig)
+    chroma_config: ChromaConfig = Field(default_factory=ChromaConfig)
+    weaviate_config: WeaviateConfig = Field(default_factory=WeaviateConfig)
     hosted: Hosted = Hosted.LOCALLY_HOSTED
 
     @staticmethod

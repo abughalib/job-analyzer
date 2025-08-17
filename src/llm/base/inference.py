@@ -1,5 +1,6 @@
-from typing import Optional
+from typing import Optional, Callable, Coroutine, Any
 
+from langchain_core.messages import ToolMessage
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import BaseMessage
 from langchain.tools import BaseTool
@@ -13,6 +14,13 @@ class BaseInference:
 
     def tools(self, tools: list[BaseTool]) -> "BaseInference":
         """Set tools for the language model."""
+
+        raise NotImplementedError("This method should be implemented by subclasses.")
+
+    def tools_handler(
+        self, tool_handler: Callable[[str, str, str], Coroutine[Any, Any, ToolMessage]]
+    ) -> "BaseInference":
+        """Set Function Call handler for tools"""
 
         raise NotImplementedError("This method should be implemented by subclasses.")
 

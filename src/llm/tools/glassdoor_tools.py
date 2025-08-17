@@ -53,7 +53,7 @@ async def glassdoor_call_handler(
 
     match function_name:
         case "search_job_salary_tool":
-            json_args = json.loads(str(function_args))
+            json_args = json.loads(function_args) if function_args else json.loads("{}")
             company_name = json_args["company_name"]
             location = json_args.get("location", None)
             job_function = json_args.get("job_function", None)
