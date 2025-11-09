@@ -6,6 +6,7 @@ from langchain_core.messages import ToolMessage
 from llm.base.inference import BaseInference
 from llm.local.inference import LocalInference
 from llm.gemini.inference import GeminiInference
+from llm.openai.inference import OpenAIInference
 from utils.app_config import AppConfig, InferenceEngine
 
 
@@ -22,6 +23,8 @@ class Inference:
                 self.llm = LocalInference()
             case InferenceEngine.GEMINI:
                 self.llm = GeminiInference()
+            case InferenceEngine.OPENAI:
+                self.llm = OpenAIInference()
             case _:
                 raise ValueError("Unknown inference engine")
 
@@ -63,3 +66,4 @@ class Inference:
     def get_llm(self) -> Union[BaseInference, None]:
         """Get the LLM instance."""
         return self.llm
+

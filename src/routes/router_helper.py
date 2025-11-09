@@ -1,3 +1,4 @@
+import logging
 from pathlib import Path
 
 import xxhash
@@ -8,6 +9,8 @@ from langchain_core.messages import (
     SystemMessage,
 )
 from routes.models import APISTATUS
+
+logger = logging.getLogger(__name__)
 from utils.vars import get_app_path
 from llm.inference import Inference
 from llm.tools.layoff_tools import (
@@ -37,76 +40,140 @@ class ConnectionManager:
     """WebSocket Connection Manager"""
 
     def __init__(self):
+        logger.debug("Initializing WebSocket Connection Manager")
         self.active_connections: list[WebSocket] = []
         self.chat_history: dict[WebSocket, list[BaseMessage]] = {}
 
     async def connect(self, websocket: WebSocket):
         """Handle websocket connection"""
+        client_id = id(websocket)
+        logger.info(f"Accepting new WebSocket connection from client {client_id}")
+
         await websocket.accept()
         self.active_connections.append(websocket)
         self.chat_history[websocket] = [
             SystemMessage(content="You are a helpful assistant.")
         ]
 
+        logger.debug(
+            f"Client {client_id} connected. Active connections: {len(self.active_connections)}"
+        )
+
     def disconnect(self, websocket: WebSocket):
         """Handle websocket disconnect"""
-        self.active_connections.remove(websocket)
-        del self.chat_history[websocket]
+        client_id = id(websocket)
+        logger.info(f"Disconnecting client {client_id}")
+
+        try:
+            self.active_connections.remove(websocket)
+            del self.chat_history[websocket]
+            logger.debug(
+                f"Client {client_id} disconnected. Remaining connections: {len(self.active_connections)}"
+            )
+        except (ValueError, KeyError) as e:
+            logger.error(f"Error disconnecting client {client_id}: {str(e)}")
 
     async def broadcast(self, message: str):
         """Broadcast websocket message"""
+        logger.debug(
+            f"Broadcasting message to {len(self.active_connections)} clients: {message[:100]}..."
+        )
+
         for connection in self.active_connections:
-            await connection.send_text(message)
+            try:
+                await connection.send_text(message)
+            except Exception as e:
+                client_id = id(connection)
+                logger.error(f"Failed to broadcast to client {client_id}: {str(e)}")
 
     async def handle_chat_completion(self, websocket: WebSocket, message: str):
         """Handle chat completion logic"""
+        client_id = id(websocket)
+        logger.debug(f"Processing chat completion for client {client_id}")
+        logger.debug(f"Received message: {message[:100]}...")  # Log first 100 chars
 
         self.chat_history[websocket][0] = SystemMessage(content=get_system_prompt())
         self.chat_history[websocket].append(HumanMessage(content=message))
-
-        inference = (
-            Inference()
-            .with_tools(
-                [
-                    get_recent_layoff_tool,
-                    get_recent_layoff_tool_fields,
-                    search_recent_news_tool,
-                    search_recent_web_content_tool,
-                    google_search_tool,
-                    search_job_salary_tool,
-                ]
-            )
-            .with_tool_handler(tool_handler)
+        logger.debug(
+            f"Updated chat history for client {client_id}. History length: {len(self.chat_history[websocket])}"
         )
 
-        await inference.stream(websocket, self.chat_history[websocket])
+        try:
+            logger.debug(f"Setting up inference engine for client {client_id}")
+            inference = (
+                Inference()
+                .with_tools(
+                    [
+                        get_recent_layoff_tool,
+                        get_recent_layoff_tool_fields,
+                        search_recent_news_tool,
+                        search_recent_web_content_tool,
+                        google_search_tool,
+                        search_job_salary_tool,
+                    ]
+                )
+                .with_tool_handler(tool_handler)
+            )
+
+            logger.debug(f"Starting inference stream for client {client_id}")
+            await inference.stream(websocket, self.chat_history[websocket])
+            logger.debug(f"Completed inference stream for client {client_id}")
+
+        except Exception as e:
+            logger.error(
+                f"Error during chat completion for client {client_id}: {str(e)}",
+                exc_info=True,
+            )
+            raise
 
 
 async def handle_layoff_file_upload(file: UploadFile) -> APISTATUS:
-    contents = await file.read()
-
-    file_hash = xxhash.xxh64(contents).hexdigest()
-
-    file_extension = Path(file.filename or "abc.csv").suffix
-
-    upload_path = (
-        get_app_path()
-        .joinpath(UPLOADED_FILE_FOLDER)
-        .joinpath(f"temp_{file_hash}.{file_extension}")
-    )
-
-    if upload_path.exists():
-        return APISTATUS.DUPLICATE
+    """Handle the upload and processing of layoff data CSV files."""
+    logger.info(f"Starting layoff file upload process for: {file.filename}")
 
     try:
-        with open(upload_path, "wb") as f:
-            f.write(contents)
+        contents = await file.read()
+        file_hash = xxhash.xxh64(contents).hexdigest()
+        file_extension = Path(file.filename or "abc.csv").suffix
 
-    except PermissionError:
-        return APISTATUS.PERMISSIONERROR
+        upload_path = (
+            get_app_path()
+            .joinpath(UPLOADED_FILE_FOLDER)
+            .joinpath(f"temp_{file_hash}.{file_extension}")
+        )
+        logger.debug(f"Generated upload path: {upload_path}")
 
-    layoff_parsed = LayOff.from_csv(upload_path)
+        if upload_path.exists():
+            logger.warning(f"Duplicate file detected with hash {file_hash}")
+            return APISTATUS.DUPLICATE
 
-    await add_layoff_bulk(layoff_parsed)
+        try:
+            logger.debug(f"Writing file contents to {upload_path}")
+            with open(upload_path, "wb") as f:
+                f.write(contents)
+        except PermissionError as e:
+            logger.error(f"Permission denied while writing to {upload_path}: {str(e)}")
+            return APISTATUS.PERMISSIONERROR
+        except Exception as e:
+            logger.error(
+                f"Unexpected error while writing file: {str(e)}", exc_info=True
+            )
+            raise
 
-    return APISTATUS.OK
+        logger.debug(f"Parsing CSV file: {upload_path}")
+        layoff_parsed = LayOff.from_csv(upload_path)
+        logger.info(
+            f"Successfully parsed {len(layoff_parsed)} layoff records from {file.filename}"
+        )
+
+        logger.debug("Adding parsed records to database")
+        await add_layoff_bulk(layoff_parsed)
+        logger.info(f"Successfully added {len(layoff_parsed)} records to database")
+
+        return APISTATUS.OK
+
+    except Exception as e:
+        logger.error(
+            f"Error processing layoff file {file.filename}: {str(e)}", exc_info=True
+        )
+        raise

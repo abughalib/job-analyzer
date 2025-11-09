@@ -1,3 +1,4 @@
+import logging
 import tomllib
 import tomli_w
 from enum import Enum
@@ -176,10 +177,26 @@ class DatabaseConfig(BaseModel):
         return DatabaseConfig()
 
 
+class LoggingConfig(BaseModel):
+    """Configuration for application logging."""
+
+    level: LogLevel = LogLevel.INFO
+    file_path: str = "logs/app.log"
+    max_size_mb: int = 30
+    backup_count: int = 5
+    format: str = "%(asctime)s %(levelname)s [%(name)s:%(lineno)d] - %(message)s"
+    console_logging: bool = True
+    file_logging: bool = True
+
+    @staticmethod
+    def default() -> "LoggingConfig":
+        return LoggingConfig()
+
+
 class AppSetting(BaseModel):
     app_name: str = "Job Analyzer"
     app_author: str = "Abugh"
-    app_log_level: LogLevel = LogLevel.INFO
+    logging: LoggingConfig = Field(default_factory=LoggingConfig.default)
 
     @staticmethod
     def default() -> "AppSetting":
@@ -196,36 +213,87 @@ class AppConfig(BaseModel):
 
     def save_config(self, toml_file_path: Path = app_config_path()):
         """Saves the configuration to a TOML file."""
+        logger = logging.getLogger(__name__)
         config_dict = self.model_dump(mode="json", exclude_none=True)
 
-        toml_file_path.parent.mkdir(parents=True, exist_ok=True)
+        try:
+            # Log the attempt to create directory
+            logger.debug(
+                f"Ensuring config directory exists at: {toml_file_path.parent}"
+            )
+            toml_file_path.parent.mkdir(parents=True, exist_ok=True)
 
-        with open(toml_file_path, "wb") as f:
-            tomli_w.dump(config_dict, f)
-        print(f"Configuration saved to {toml_file_path}")
+            # Log the configuration being saved
+            logger.debug("Serializing configuration to TOML format")
+            with open(toml_file_path, "wb") as f:
+                tomli_w.dump(config_dict, f)
+
+            logger.info(f"Configuration successfully saved to {toml_file_path}")
+        except PermissionError as e:
+            logger.error(
+                f"Permission denied while saving config to {toml_file_path}: {e}"
+            )
+            raise
+        except Exception as e:
+            logger.error(
+                f"Unexpected error while saving config to {toml_file_path}: {e}"
+            )
+            raise
 
     @classmethod
     def from_config(cls, path: Path = app_config_path()) -> "AppConfig":
         """Loads configuration from a TOML file."""
+        logger = logging.getLogger(__name__)
+
+        logger.debug(f"Attempting to load configuration from {path}")
         if not path.exists():
-            print("No config file found, returning default configuration.")
+            logger.warning(
+                f"Config file not found at {path}, using default configuration"
+            )
             return cls.default()
 
-        with open(path, "rb") as f:
-            try:
+        try:
+            with open(path, "rb") as f:
+                logger.debug("Parsing TOML configuration file")
                 config_data = tomllib.load(f)
-            except tomllib.TOMLDecodeError as e:
-                raise ValueError(f"Error decoding TOML file at {path}: {e}")
 
-        print(f"Configuration loaded from {path}")
-        return cls(**config_data)
+            logger.debug("Creating AppConfig instance from loaded data")
+            config = cls(**config_data)
+            logger.info(f"Configuration successfully loaded from {path}")
+
+            # Log important configuration details at debug level
+            logger.debug(
+                f"Loaded config - Database Engine: {config.database_config.database_engine}"
+            )
+            logger.debug(
+                f"Loaded config - Inference Engine: {config.inference.inference_engine}"
+            )
+            logger.debug(
+                f"Loaded config - Log Level: {config.app_setting.logging.level}"
+            )
+
+            return config
+
+        except tomllib.TOMLDecodeError as e:
+            logger.error(f"Invalid TOML syntax in config file at {path}: {e}")
+            raise ValueError(f"Error decoding TOML file at {path}: {e}")
+        except KeyError as e:
+            logger.error(f"Missing required configuration key in {path}: {e}")
+            raise ValueError(f"Missing required configuration in {path}: {e}")
+        except Exception as e:
+            logger.error(f"Unexpected error while loading config from {path}: {e}")
+            raise
 
     @classmethod
     def load_default(cls) -> "AppConfig":
         """Loads the default configuration."""
+        logger = logging.getLogger(__name__)
+        logger.debug("Loading configuration from default path")
         return cls.from_config(app_config_path())
 
     @staticmethod
     def default() -> "AppConfig":
         """Provides a default instance of the application configuration."""
+        logger = logging.getLogger(__name__)
+        logger.info("Creating new default configuration instance")
         return AppConfig()
