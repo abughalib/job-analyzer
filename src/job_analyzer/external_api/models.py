@@ -1,5 +1,5 @@
 import json
-from typing import Optional, Any
+from typing import Optional, Any, Literal
 
 from pydantic import (
     BaseModel,
@@ -399,3 +399,97 @@ class GlassdoorLocation(BaseModel):
     data: list[GlassdoorLocationData]
     status: bool
     message: str
+
+
+# --- LLM Analysis Response Models --- #
+
+
+class JobDescriptionAnalysis(BaseModel):
+    """Response model for job description analysis."""
+
+    role_title: str
+    must_have_requirements: list[str] = Field(default_factory=list)
+    nice_to_have_requirements: list[str] = Field(default_factory=list)
+    deal_breakers: list[str] = Field(default_factory=list)
+    technical_skills: list[str] = Field(default_factory=list)
+    soft_skills: list[str] = Field(default_factory=list)
+    experience_requirements: Optional[str] = None
+    education_requirements: Optional[str] = None
+    certification_requirements: list[str] = Field(default_factory=list)
+    industry_domain: Optional[str] = None
+    additional_notes: Optional[str] = None
+
+    def as_context(self) -> dict[str, Any]:
+        """Convert to context dict for LLM tool response."""
+        return self.model_dump(mode="json")
+
+
+class WorkExperience(BaseModel):
+    job_title: str
+    company: Optional[str] = None
+    duration: Optional[str] = None
+    responsibilities: Optional[str] = None
+
+
+class Education(BaseModel):
+    degree: str
+    institution: Optional[str] = None
+    year: Optional[str] = None
+
+
+class ResumeAnalysis(BaseModel):
+    """Response model for resume analysis."""
+
+    candidate_name: Optional[str] = None
+    work_experience: list[WorkExperience] = Field(default_factory=list)
+    technical_skills: list[str] = Field(default_factory=list)
+    soft_skills: list[str] = Field(default_factory=list)
+    education: list[Education] = Field(default_factory=list)
+    certifications: list[str] = Field(default_factory=list)
+    projects: list[str] = Field(default_factory=list)
+    achievements: list[str] = Field(default_factory=list)
+    additional_info: Optional[str] = None
+
+    def as_context(self) -> dict[str, Any]:
+        """Convert to context dict for LLM tool response."""
+        return self.model_dump(mode="json")
+
+
+class ResumeReview(BaseModel):
+    """Response model for resume review against JD."""
+
+    candidate_name: Optional[str] = None
+    work_experience: list[WorkExperience] = Field(default_factory=list)
+    technical_skills: list[str] = Field(default_factory=list)
+    soft_skills: list[str] = Field(default_factory=list)
+    education: list[Education] = Field(default_factory=list)
+    certifications: list[str] = Field(default_factory=list)
+    projects: list[str] = Field(default_factory=list)
+    achievements: list[str] = Field(default_factory=list)
+    additional_info: Optional[str] = None
+
+    def as_context(self) -> dict[str, Any]:
+        """Convert to context dict for LLM tool response."""
+        return self.model_dump(mode="json")
+
+
+class ScoreBreakdown(BaseModel):
+    hard_skills: int = Field(ge=0, le=40)
+    experience: int = Field(ge=0, le=30)
+    education: int = Field(ge=0, le=10)
+    soft_skills: int = Field(ge=0, le=20)
+
+
+class FitScore(BaseModel):
+    """Response model for candidate fit scoring."""
+
+    overall_score: int = Field(ge=0, le=100)
+    score_breakdown: ScoreBreakdown
+    deal_breakers_found: list[str]
+    reasoning_trace: str
+    final_recommendation: Literal["Strong Fit", "Potential Fit", "Weak Fit", "No Fit"]
+    data_sufficiency: Literal["High", "Medium", "Low"]
+
+    def as_context(self) -> dict[str, Any]:
+        """Convert to context dict for LLM tool response."""
+        return self.model_dump(mode="json")

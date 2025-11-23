@@ -29,6 +29,12 @@ from llm.tools.google_search_tools import (
 from llm.tools.glassdoor_tools import (
     search_job_salary_tool,
 )
+from llm.tools.analysis_tools import (
+    analyze_job_description_tool,
+    analyze_resume_tool,
+    analyze_candidate_fit_tool,
+)
+from llm.tools.document_tools import get_uploaded_document_tool
 from job_analyzer.database.models import LayOff
 from job_analyzer.database.layoff_db import add_layoff_bulk
 from llm.tools.tool_helper import functional_call_handler as tool_handler
@@ -43,6 +49,9 @@ class ConnectionManager:
         logger.debug("Initializing WebSocket Connection Manager")
         self.active_connections: list[WebSocket] = []
         self.chat_history: dict[WebSocket, list[BaseMessage]] = {}
+        self.document_context: dict[WebSocket, dict[str, str]] = (
+            {}
+        )  # Stores uploaded document IDs
 
     async def connect(self, websocket: WebSocket):
         """Handle websocket connection"""
@@ -67,6 +76,8 @@ class ConnectionManager:
         try:
             self.active_connections.remove(websocket)
             del self.chat_history[websocket]
+            if websocket in self.document_context:
+                del self.document_context[websocket]
             logger.debug(
                 f"Client {client_id} disconnected. Remaining connections: {len(self.active_connections)}"
             )
@@ -110,6 +121,10 @@ class ConnectionManager:
                         search_recent_web_content_tool,
                         google_search_tool,
                         search_job_salary_tool,
+                        analyze_job_description_tool,
+                        analyze_resume_tool,
+                        analyze_candidate_fit_tool,
+                        get_uploaded_document_tool,
                     ]
                 )
                 .with_tool_handler(tool_handler)
