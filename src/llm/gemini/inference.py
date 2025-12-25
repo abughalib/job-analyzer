@@ -15,6 +15,9 @@ from llm.base.inference import BaseInference
 from llm.base.callbacks import CallBackHandler
 from utils.vars import get_gemini_api_key
 from utils.app_config import AppConfig
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class GeminiInference(BaseInference):
@@ -30,6 +33,9 @@ class GeminiInference(BaseInference):
             google_api_key=get_gemini_api_key(),
             temperature=self.app_config.inference.inference_config.gemini.temperature,
             max_output_tokens=self.app_config.inference.inference_config.gemini.max_tokens,
+        )
+        logger.info(
+            f"GeminiInference initialized with model: {self.app_config.inference.inference_config.gemini.model}"
         )
         self.function_call_handler = None
         self.llm_with_tools = None
@@ -66,7 +72,12 @@ class GeminiInference(BaseInference):
         """Recursively process tool calls and stream responses."""
 
         if depth >= max_depth:
+            logger.warning(f"Max depth {max_depth} reached in stream recursion")
             return response_str
+
+        logger.debug(
+            f"Stream called with depth {depth}, message count: {len(messages)}"
+        )
 
         tool_calls_args = {}  # (tool_name, tool_id) -> args
         last_tool_name = ""
@@ -92,7 +103,10 @@ class GeminiInference(BaseInference):
                     await websocket.send_text(chunk.content)
 
         if not tool_calls_args:
+            logger.debug("No tool calls found in stream chunk")
             return response_str
+
+        logger.info(f"Processing {len(tool_calls_args)} tool calls")
 
         tool_messages = []
         assert self.function_call_handler is not None
@@ -111,6 +125,7 @@ class GeminiInference(BaseInference):
         """Generate a response from the language model based on the provided messages."""
 
         if self.llm:
+            logger.debug(f"Invoking chat with {len(messages)} messages")
             response = await self.llm.ainvoke(messages)
 
             return (

@@ -39,6 +39,9 @@ async def save_uploaded_document(
         UploadedDocument with metadata and extracted text
     """
     try:
+        logger.debug(
+            f"Starting document upload: {file.filename}, type: {doc_type}, session: {session_id}"
+        )
         # Read file content
         contents = await file.read()
         file_hash = xxhash.xxh64(contents).hexdigest()
@@ -121,6 +124,9 @@ async def save_text_document(
         UploadedDocument with metadata
     """
     try:
+        logger.debug(
+            f"Starting text document save. Type: {doc_type}, filename: {filename}, session: {session_id}"
+        )
         # Create hash of text
         text_hash = xxhash.xxh64(text.encode()).hexdigest()
 
@@ -171,7 +177,15 @@ def get_document(doc_id: str) -> Optional[UploadedDocument]:
     Returns:
         UploadedDocument if found, None otherwise
     """
-    return _document_store.get(doc_id)
+
+    logger.debug(f"Retrieving document with ID: {doc_id}")
+    doc = _document_store.get(doc_id)
+
+    if doc:
+        logger.debug(f"Document found: {doc.original_filename}")
+    else:
+        logger.debug("Document not found")
+    return doc
 
 
 def _find_document_by_hash(file_hash: str) -> Optional[UploadedDocument]:

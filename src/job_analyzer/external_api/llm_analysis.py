@@ -37,7 +37,11 @@ async def _call_llm_for_analysis(prompt: str) -> str:
             ),
             HumanMessage(content=prompt),
         ]
+        logger.debug(f"Sending request to LLM. Prompt length: {len(prompt)}")
         response = await inference.chat(messages)
+        logger.debug(
+            f"Received response from LLM (first 200 chars): {response[:200]}..."
+        )
         return response
     except Exception as e:
         logger.error(f"LLM call failed: {str(e)}", exc_info=True)

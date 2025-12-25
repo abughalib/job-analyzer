@@ -8,6 +8,9 @@ from llm.local.inference import LocalInference
 from llm.gemini.inference import GeminiInference
 from llm.openai.inference import OpenAIInference
 from utils.app_config import AppConfig, InferenceEngine
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class Inference:
@@ -26,7 +29,14 @@ class Inference:
             case InferenceEngine.OPENAI:
                 self.llm = OpenAIInference()
             case _:
+                logger.error(
+                    f"Unknown inference engine specified: {self.app_config.inference.inference_engine}"
+                )
                 raise ValueError("Unknown inference engine")
+
+        logger.info(
+            f"Inference initialized with engine: {self.app_config.inference.inference_engine}"
+        )
 
     def with_tools(self, tools: list[BaseTool]) -> "Inference":
         """Add tools to the inference engine."""
@@ -52,18 +62,23 @@ class Inference:
     async def stream(self, websocket, chat_history) -> str:
         """Stream the response from the LLM."""
         if self.llm is not None:
+            logger.debug("Streaming response from LLM")
             return await self.llm.stream(websocket, chat_history)
         else:
+            logger.error("LLM instance is not initialized during stream call")
             raise ValueError("LLM instance is not initialized")
 
     async def chat(self, chat_history):
         """Perform a chat operation."""
         if self.llm is not None:
+            logger.debug(
+                f"Sending chat request to LLM. History length: {len(chat_history)}"
+            )
             return await self.llm.chat(chat_history)
         else:
+            logger.error("LLM instance is not initialized during chat call")
             raise ValueError("LLM instance is not initialized")
 
     def get_llm(self) -> Union[BaseInference, None]:
         """Get the LLM instance."""
         return self.llm
-

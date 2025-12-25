@@ -16,6 +16,9 @@ from langchain_core.messages import (
 from llm.base.inference import BaseInference
 from llm.base.callbacks import CallBackHandler
 from utils.app_config import AppConfig
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class LocalInference(BaseInference):
@@ -31,6 +34,9 @@ class LocalInference(BaseInference):
             model=self.app_config.inference.inference_config.openai.model,
             temperature=self.app_config.inference.inference_config.openai.temperature,
             api_key=SecretStr("no-key"),  # Local inference does not require an API key
+        )
+        logger.info(
+            f"LocalInference initialized with model: {self.app_config.inference.inference_config.openai.model} at {self.app_config.inference.inference_config.openai.api_base}"
         )
         self.function_call_handler = None
         self.llm_with_tools = None
@@ -67,7 +73,12 @@ class LocalInference(BaseInference):
         """Recursively process tool calls and stream responses."""
 
         if depth >= max_depth:
+            logger.warning(f"Max depth {max_depth} reached in stream recursion")
             return response_str
+
+        logger.debug(
+            f"Stream called with depth {depth}, message count: {len(messages)}"
+        )
 
         tool_calls_args = {}  # (tool_name, tool_id) -> args
         last_tool_name = ""
@@ -93,7 +104,10 @@ class LocalInference(BaseInference):
                     await websocket.send_text(chunk.content)
 
         if not tool_calls_args:
+            logger.debug("No tool calls found in stream chunk")
             return response_str
+
+        logger.info(f"Processing {len(tool_calls_args)} tool calls")
 
         tool_messages = []
         assert self.function_call_handler is not None
@@ -112,6 +126,7 @@ class LocalInference(BaseInference):
         """Generate a response from the language model based on the provided messages."""
 
         if self.llm:
+            logger.debug(f"Invoking chat with {len(messages)} messages")
             response = await self.llm.ainvoke(messages)
 
             return (

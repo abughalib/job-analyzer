@@ -21,6 +21,10 @@ load_dotenv()
 # Load app config
 config = AppConfig.load_default()
 
+from utils.logging_utils import setup_logging
+
+setup_logging(config.app_setting.logging)
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):

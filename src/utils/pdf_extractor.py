@@ -10,6 +10,8 @@ from typing import List, Optional
 
 from PyPDF2 import PdfReader
 
+logger = logging.getLogger(__name__)
+
 
 def extract_text_from_pdf(pdf_path: str | Path) -> str:
     """
@@ -40,14 +42,12 @@ def extract_text_from_pdf(pdf_path: str | Path) -> str:
                         if uri:
                             page_text += f"\n[Link: {uri}]"
                 except Exception as e:
-                    logging.debug(
-                        f"Warning: Failed to read annotation on page {i}: {e}"
-                    )
+                    logger.debug(f"Warning: Failed to read annotation on page {i}: {e}")
 
         if page_text.strip():
             text_chunks.append(page_text)
         else:
-            logging.debug(f"No text found on page {i}")
+            logger.debug(f"No text found on page {i}")
 
     return "\n\n".join(text_chunks).strip()
 
@@ -74,14 +74,14 @@ def save_extracted_text(
 
     txt_path = output_dir / f"{pdf_path.stem}.txt"
 
-    logging.info(f"Extracting text from: {pdf_path}")
+    logger.info(f"Extracting text from: {pdf_path}")
     text_content = extract_text_from_pdf(pdf_path)
 
     if not text_content:
-        logging.warning(f"No extractable text found in: {pdf_path.name}")
+        logger.warning(f"No extractable text found in: {pdf_path.name}")
         text_content = "[No extractable text found in this PDF.]"
 
     txt_path.write_text(text_content, encoding="utf-8")
-    logging.info(f"Extracted text saved to: {txt_path}")
+    logger.info(f"Extracted text saved to: {txt_path}")
 
     return txt_path
